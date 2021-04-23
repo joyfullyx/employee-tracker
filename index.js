@@ -1,23 +1,28 @@
 const inquirer = require('inquirer');
+const mysql = require('mysql');
 
-const employeeArr = [];
-const managerArr = [];
-const roleArr = [];
-const deptArr = [];
+const connection = mysql.createConnection({
+    host: 'localhost',
+    port: 3306,
+    user: 'root',
+    password: 'password',
+    database: 'employee_db'
+});
 
 const starterQuestion = [
     {
         type: 'list',
         message: 'What would you like to do?',
-        choices: ['View all departments', 'View all employees', 'View employees by role', 'Add department', 'Add an employee', 'Add an employee by role', 'Update employee role', 'Quit'],
+        choices: ['View all departments', 'View all employees', 'View all roles', 'Add department', 'Add an employee', 'Add an employee by role', 'Update employee role', 'Quit'],
         name: 'action'
     }
 ]
 
 const addDeptQ = [
     {
-        type: 'input',
+        type: 'list',
         message: "What is the name of the department?",
+        choices: ['Sales', 'Engineering', 'Finance', 'Legal', 'Add new department'],
         name: 'department'
     }
 ]
@@ -36,24 +41,31 @@ const addEmployeeQ = [
     {
         type: 'list',
         message: "What is the employee's role?",
-        choices: [],
+        choices: ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Accountant', 'Lawyer', 'Legal Team Lead'],
         name: 'title'
     },
     {
         type: 'list',
         message: "What is the employee's department?",
-        choices: [],
+        choices: ['Sales', 'Engineering', 'Finanace', 'Legal'],
         name: 'department'
     },
     {
         type: 'input',
         message: "What is the employee's salary?",
-        name: 'salary'
+        name: 'salary',
+        validate: function(value){
+            if(Number(value)) {
+                return true
+            } else {
+                return false
+            }
+        } 
     },
     {
         type: 'list',
         message: "Who is the employee's manager?",
-        choices: [],
+        choices: ['Kat Larsen', 'Brian Anderson', 'Jessica Parker', 'Jonathan Long', 'Patrick Harris', 'Meredith Grey'],
         name: 'manager'
     }
 ]
@@ -72,7 +84,7 @@ const addByRoleQ = [
     {
         type: 'list',
         message: "What is the employee's role?",
-        choices: [],
+        choices: ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Accountant', 'Lawyer', 'Legal Team Lead'],
         name: 'title'
     }
 ]
@@ -92,34 +104,42 @@ const updateRoleQ = [
     }
 ]
 
-function takeAction() {
+// const showAll = () => {
+//     console.log('Showing all employees...\n');
+//     connection.query('SELECT * FROM employee_db', (err, res) => {
+//         if (err) throw err;
+//         console.table(res);
+//         // TODO: add function here...?
+//     })
+// };
+
+const start = () => {
     inquirer.prompt(starterQuestion)
     .then(answers => {
         // console.log(answers)
         switch (answers.action) {
             case 'View all departments':
-                console.log('Show me the departments')
+                showDpt();
                 break;
             
             case 'View all employees':
+                showEmployees();
                 console.log('Show me the employees')
                 break;
             
-            case 'View employees by role':
-                console.log('Show me the roles')
+            case 'View all roles':
+                showRoles();
                 break;
 
             case 'Add department':
-                console.log('Add me a department')
+                addDept();
                 break;
 
             case 'Add an employee':
-                console.log('Let me add someone')
                 addEmployee();
                 break;
 
             case 'Add an employee by role':
-                console.log('Let me add by role')
                 break;
 
             case 'Update employee role':
@@ -135,14 +155,101 @@ function takeAction() {
         }
     })
 }
-takeAction();
+start();
 
-function addEmployee() {
+// function to show all departments
+const showDpt = () => {
+    console.log('Showing all departments...\n');
+    connection.query('SELECT * FROM department', (err, res) => {
+        if (err) throw err;
+        console.table(res);
+        // TODO: add function here
+    })
+    start();
+};
+
+// function to show all employees
+const showEmployees = () => {
+    console.log('Showing all employees...\n');
+    connection.query('SELECT * FROM employee', 
+    (err, res) => {
+        if (err) throw err;
+        console.table(res);
+    })
+    start();
+};
+
+// function to show all roles
+const showRoles = () => {
+    console.log('Showing employees by role...\n');
+    connection.query('SELECT * FROM role', (err, res) => {
+        if (err) throw err;
+        console.table(res);
+    })
+    start();
+}
+
+const addDept = () => {
+    inquirer.prompt(addDeptQ)
+        .then((answer) => {
+            connection.query('INSERT INTO department SET name = ?', answer.department,
+            (err, res) => {
+                if (err) throw err;
+                console.table(res)
+                start();
+            });
+        });
+};
+
+const addEmployee = () => {
     inquirer.prompt(addEmployeeQ)
-    .then(answers => {
-        const employee = answers.firstName + ' ' + answers.lastName;
-        employeeArr.push(employee);
-        // console.log(employeeArr);
-        console.log(`${employee} added`)
+    .then((answer) => {
+        connection.query('INSERT INTO employee SET ?',
+        {
+            first_name: answer.firstName,
+            last_name: answer.lastName,
+            title: answer.title,
+            department: answer.department,
+            salary: answer.salary
+        }, 
+        (err, res) => {
+            if (err) throw err;
+            console.table(res)
+            start();
+        })
     })
 }
+ 
+
+
+
+// function addEmployee() {
+//     console.log('Adding new employee...\n');
+//     inquirer.prompt(addEmployeeQ)
+//     .then(answers => {
+//         const employee = answers.firstName + ' ' + answers.lastName;
+//         employeeArr.push(employee);
+//         // console.log(employeeArr);
+//         console.log(`${employee} added`)
+//     })
+// }
+
+// const addEmployee = () => {
+//     inquirer.prompt(addEmployeeQ)
+//     .then (({ employee, department, role }) => {
+//         connection.query('INSERT INTO employee SET ?', {
+//             first_name,
+//             last_name,
+//             role_id, 
+//             manager_id,
+//         }, (err) => {
+//             if (err) console.log(err)
+//             console.log('Employee added!')
+//             showAll();
+//         })
+//     })
+// }
+connection.connect((err) => {
+    if (err) throw err;
+    console.log(`connected as id ${connection.threadId}`)
+});
