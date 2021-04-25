@@ -30,7 +30,8 @@ const addDeptQ = [
 
 const employeeRoleArr = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Accountant', 'Lawyer', 'Legal Team Lead'];
 const deptArr = ['Sales', 'Engineering', 'Finanace', 'Legal'];
-// const managerId = [];
+const managerArr = ['Kat Larsen', 'Brian Anderson', 'Jessica Parker', 'Jonathan Long', 'Patrick Harris', 'Meredith Grey'];
+
 const addEmployeeQ = [
     {
         type: 'input',
@@ -49,34 +50,29 @@ const addEmployeeQ = [
         name: 'title'
     },
     // {
-    //     type: 'input',
-    //     message: 'What is the manager id?',
-    //     name: 'managerId'
+    //     type: 'list',
+    //     message: "What is the employee's department?",
+    //     choices: deptArr,
+    //     name: 'department'
     // },
     {
         type: 'list',
-        message: "What is the employee's department?",
-        choices: deptArr,
-        name: 'department'
-    },
-    {
-        type: 'input',
-        message: "What is the employee's salary?",
-        name: 'salary',
-        validate: function(value){
-            if(Number(value)) {
-                return true
-            } else {
-                return false
-            }
-        } 
-    },
-    {
-        type: 'list',
         message: "Who is the employee's manager?",
-        choices: ['Kat Larsen', 'Brian Anderson', 'Jessica Parker', 'Jonathan Long', 'Patrick Harris', 'Meredith Grey'],
+        choices: managerArr,
         name: 'manager'
-    }
+    },
+    // {
+    //     type: 'input',
+    //     message: "What is the employee's salary?",
+    //     name: 'salary',
+    //     validate: function(value){
+    //         if(Number(value)) {
+    //             return true
+    //         } else {
+    //             return false
+    //         }
+    //     } 
+    // },
 ]
 
 const addRoleQ = [
@@ -138,16 +134,11 @@ const start = () => {
         switch (answers.action) {
             case 'View all employees':
                 showEmployees();
-                // console.log('Show me the employees')
                 break;
 
             case 'View all employees by department':
                 showByDpt();
                 break;
-            
-            // case 'View all employees by Manager':
-            //     showByManager();
-            //     break;
 
             case 'View employees by role':
                 showByRole();
@@ -161,6 +152,7 @@ const start = () => {
                 addRole();
                 break;
 
+            // TODO:
             case 'Add a department':
                 addDept();
                 break;
@@ -168,7 +160,6 @@ const start = () => {
 
             case 'Update employee role':
                 updateRole();
-                // console.log('Make some role changes')
                 break;
 
             case 'Quit':
@@ -222,45 +213,50 @@ const showByRole = () => {
     SELECT employee.id, employee.first_name, employee.last_name, role.title 
     FROM role 
     JOIN employee 
-    ON employee.id = role.id`, (err, res) => {
+    ON employee.id = role.id`, 
+    (err, res) => {
         if (err) throw err;
         console.table(res);
         start();
     })
 };
 
-// function to show all employees by manager
-// TODO: manager???
-// const showByManager = () => {
-//     console.log('Showing employees by role...\n');
-//     connection.query('SELECT * FROM role', (err, res) => {
-//         if (err) throw err;
-//         console.table(res);
-//         // reprompt start questions
-//         start();
-//     })
-// };
+// function to add employee
+const addEmployee = () => {
+    inquirer.prompt(addEmployeeQ)
+    .then ((answer) => {
+        // answer.department_id = employeeRoleArr.indexOf(answer.title) +1;
+        // answer.role_id = deptArr.indexOf(answer.department) +1;
+        answer.title = employeeRoleArr.indexOf(answer.title) +1;
+        answer.manager = managerArr.indexOf(answer.manager) +1;
+        connection.query(`
+        INSERT INTO employee (first_name, last_name, role_id, manager_id) 
+        VALUES (?, ?, ?, ?)`,
+        [answer.firstName, answer.lastName, answer.title, answer.manager], 
+        (err, res) => {
+            if (err) throw err;
+            // console.table(res);
+            // connection.end();
+            showAddedEmployee();
+            connection.end();
+        })
+    })
+};
 
-// const addEmployee = () => {
-//     inquirer.prompt(addEmployeeQ)
-//     .then ((answer) => {
-//         answer.department_id = employeeRoleArr.indexOf(answer.title) +1;
-//         answer.role_id = deptArr.indexOf(answer.department) +1;
-//         connection.query('INSERT INTO employee SET ?',
-//         [{
-//             first_name: answer.first_name,
-//             last_name: answer.last_name,
-//             role_id: answer.department_id,
-//             // department_id = answer.role_id,
-//             salary: answer.salary,
-//             manager: answer.manager
-//         }], 
-//         (err, res) => {
-//             if (err) throw err;
-//             console.table(res);
-//         })
-//     })
-// }
+const showAddedEmployee = () => {
+    console.log('Employee Added!\n');
+    connection.query(`
+    SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department_name
+    FROM employee
+    JOIN role 
+    ON role.id = employee.role_id
+    JOIN department ON role.department_id = department.id
+    `,
+    (err, res) => {
+        if (err) throw err;
+        console.table(res);
+    })
+};
 
 // function to add an employee
 // TODO: insert 
