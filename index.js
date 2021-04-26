@@ -1,5 +1,6 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql');
+// const { connect } = require('node:http2');
 // const { Console } = require('node:console');
 // const { connect } = require('node:http2');
 
@@ -15,7 +16,7 @@ const starterQuestion = [
     {
         type: 'list',
         message: 'What would you like to do?',
-        choices: ['View all employees','View all employees by department', 'View employees by role','Add an employee', 'Add a role', 'Add a department', 'Update employee role', 'Quit'],
+        choices: ['View all employees','View all employees by department', 'View employees by role','Add an employee', 'Add a role', 'Add a department', 'Update employee role', 'Delete a department', 'Quit'],
         name: 'action'
     }
 ]
@@ -55,12 +56,12 @@ const addEmployeeQ = [
     //     choices: deptArr,
     //     name: 'department'
     // },
-    {
-        type: 'list',
-        message: "Who is the employee's manager?",
-        choices: managerArr,
-        name: 'manager'
-    },
+    // {
+    //     type: 'list',
+    //     message: "Who is the employee's manager?",
+    //     choices: managerArr,
+    //     name: 'manager'
+    // },
     // {
     //     type: 'input',
     //     message: "What is the employee's salary?",
@@ -118,14 +119,14 @@ const updateRoleQ = [
     }
 ]
 
-// const showAll = () => {
-//     console.log('Showing all employees...\n');
-//     connection.query('SELECT * FROM employee_db', (err, res) => {
-//         if (err) throw err;
-//         console.table(res);
-//         // TODO: add function here...?
-//     })
-// };
+const deleteDptQ = [
+    {
+        type: 'list',
+        message: 'Which department would you like to remove?',
+        choices: deptArr,
+        name: 'deleteDpt'
+    }
+];
 
 const start = () => {
     inquirer.prompt(starterQuestion)
@@ -152,7 +153,6 @@ const start = () => {
                 addRole();
                 break;
 
-            // TODO:
             case 'Add a department':
                 addDept();
                 break;
@@ -162,8 +162,13 @@ const start = () => {
                 updateRole();
                 break;
 
+            case 'Delete a department':
+                deleteDpt();
+                break;
+
             case 'Quit':
                 console.log('Thank you for using the employee database')
+                connection.end();
                 break;
 
             default:
@@ -178,7 +183,7 @@ const showEmployees = () => {
     console.log('Showing all employees...\n');
     // connection.query('SELECT * FROM employee', 
     connection.query(`
-    SELECT employee.id, role.title, employee.first_name, employee.last_name, department.name AS department_name, role.salary 
+    SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department_name, role.salary 
     FROM employee 
     JOIN role 
     ON role.id = employee.role_id 
@@ -210,10 +215,10 @@ const showByDpt = () => {
 const showByRole = () => {
     console.log('Showing all employees by role...\n');
     connection.query(`
-    SELECT employee.id, employee.first_name, employee.last_name, role.title 
-    FROM role 
-    JOIN employee 
-    ON employee.id = role.id`, 
+    SELECT employee.id, employee.first_name, employee.last_name, role.title
+    FROM employee
+    JOIN role
+    ON employee.role_id = role.id`, 
     (err, res) => {
         if (err) throw err;
         console.table(res);
@@ -234,9 +239,9 @@ const addEmployee = () => {
         VALUES (?, ?, ?, ?)`,
         [answer.firstName, answer.lastName, answer.title, answer.manager], 
         (err, res) => {
+            employeeRoleArr.push(answer.title);
+            console.log(employeeRoleArr);
             if (err) throw err;
-            // console.table(res);
-            // connection.end();
             showAddedEmployee();
             connection.end();
         })
@@ -246,7 +251,7 @@ const addEmployee = () => {
 const showAddedEmployee = () => {
     console.log('Employee Added!\n');
     connection.query(`
-    SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department_name
+    SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department_name, role.department_id
     FROM employee
     JOIN role 
     ON role.id = employee.role_id
@@ -258,36 +263,6 @@ const showAddedEmployee = () => {
     })
 };
 
-// function to add an employee
-// TODO: insert 
-
-// const addEmployee = () => {
-//     inquirer.prompt(addEmployeeQ)
-//     .then((answer) => { 
-//         answer.department_id = employeeRoleArr.indexOf(answer.title) +1;
-//         connection.query('INSERT INTO employee SET ?',
-//         {
-//             first_name: answer.firstName,
-//             last_name: answer.lastName,
-//             role_id: answer.department_id,
-//             title: function () {
-//                 employeeRoleArr;
-//                 answer.forEach(answer => {
-//                     employeeRoleArr.push(answer.title)
-//                 }) 
-//             // manager_id = answer.managerId,
-//             // name of dept
-//             // salary
-//         }, 
-//         (err, res) => {
-//             if (err) throw err;
-//             console.table(res)
-//             // reprompt start questions
-//             start();
-//         })
-//     })
-// };
-
 const addRole = () => {
     console.log('Adding role...\n');
     inquirer.prompt(addRoleQ)
@@ -295,6 +270,8 @@ const addRole = () => {
         connection.query(`
         INSERT INTO role SET title = ?, salary = ?, department_id = ?`, [answer.title, answer.salary, answer.deptId], 
         (err, res) => {
+            employeeRoleArr.push(answer.title);
+            console.log(employeeRoleArr);
             if (err) throw err;
             showRole();
             connection.end();
@@ -317,9 +294,10 @@ const addDept = () => {
     .then((answer) => {
         connection.query('INSERT INTO department SET name = ?', (answer.department),
         (err, res) => {
+            deptArr.push(answer.department);
+            console.log(deptArr);
             if (err) throw err;
             showDept();
-            // reprompt start questions
             connection.end();
         });
     });
@@ -345,6 +323,8 @@ const updateRole = () => {
         AND employee.last_name = ? 
         AND role.id = employee.id`, [answer.title, answer.firstName, answer.lastName], 
         (err, res) => {
+            employeeRoleArr.push(answer.title);
+            console.log(employeeRoleArr);
             if (err) throw err;
             showRoleUpdate();
             // reprompt start questions
@@ -357,14 +337,38 @@ const updateRole = () => {
 // function for showing role update
 const showRoleUpdate = () => {
     connection.query(`
-    SELECT employee.id, employee.first_name, employee.last_name, role.title 
-    FROM role 
-    JOIN employee ON employee.id = role.id`,
+    SELECT employee.id, employee.first_name, employee.last_name, role.title
+    FROM employee
+    JOIN role
+    ON role.id = employee.role_id`,
     (err, res) =>{ 
     if (err) throw err;
     console.table(res);
     })
 };
+
+const deleteDpt = () => {
+    inquirer.prompt(deleteDptQ)
+    .then((answer) => {
+        connection.query(`
+        DELETE FROM department WHERE department.name = ?,
+        `, answer.deleteDpt, 
+        (err, res) => {
+            if (err) throw err;
+            console.table(res);
+            showDeleteDpt();
+            connection.end();
+        })
+    })
+}
+
+const showDeleteDpt = () => {
+    connection.query(`
+    SELECT * FROM department;
+    `, (err) => {
+        if (err) throw err;
+    })
+}
 
 connection.connect((err) => {
     if (err) throw err;
