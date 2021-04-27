@@ -9,6 +9,7 @@ const connection = mysql.createConnection({
     database: 'employee_db'
 });
 
+// Starter prompt
 const starterQuestion = [
     {
         type: 'list',
@@ -18,6 +19,7 @@ const starterQuestion = [
     }
 ]
 
+// Question to add department
 const addDeptQ = [
     {
         type: 'input',
@@ -30,6 +32,7 @@ const employeeRoleArr = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software
 const deptArr = ['Sales', 'Engineering', 'Finanace', 'Legal', 'Strategy', 'Hospitality', 'Media', 'Music', 'Social Media'];
 const managerArr = ['Kat Larsen', 'Brian Anderson', 'Jessica Parker', 'Jonathan Long', 'Patrick Harris', 'Meredith Grey'];
 
+// Questions to add employee
 const addEmployeeQ = [
     {
         type: 'input',
@@ -49,6 +52,7 @@ const addEmployeeQ = [
     },
 ]
 
+// Questions to add a new role
 const addRoleQ = [
     {
         type: 'input',
@@ -74,6 +78,7 @@ const addRoleQ = [
     }
 ]
 
+// Questions to update a role
 const updateRoleQ = [
     {
         type: 'input',
@@ -92,6 +97,7 @@ const updateRoleQ = [
     }
 ]
 
+// function to initiate and call functions based on starter prompt answers
 const start = () => {
     inquirer.prompt(starterQuestion)
     .then(answers => {
