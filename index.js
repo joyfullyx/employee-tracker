@@ -13,7 +13,7 @@ const starterQuestion = [
     {
         type: 'list',
         message: 'What would you like to do?',
-        choices: ['View all employees','View all employees by department', 'View employees by role','Add an employee', 'Add a role', 'Add a department', 'Update employee role', 'Delete a department', 'Quit'],
+        choices: ['View all employees','View all employees by department', 'View employees by role','Add an employee', 'Add a role', 'Add a department', 'Update employee role', 'Quit'],
         name: 'action'
     }
 ]
@@ -47,30 +47,6 @@ const addEmployeeQ = [
         choices: employeeRoleArr,
         name: 'title'
     },
-    // {
-    //     type: 'list',
-    //     message: "What is the employee's department?",
-    //     choices: deptArr,
-    //     name: 'department'
-    // },
-    // {
-    //     type: 'list',
-    //     message: "Who is the employee's manager?",
-    //     choices: managerArr,
-    //     name: 'manager'
-    // },
-    // {
-    //     type: 'input',
-    //     message: "What is the employee's salary?",
-    //     name: 'salary',
-    //     validate: function(value){
-    //         if(Number(value)) {
-    //             return true
-    //         } else {
-    //             return false
-    //         }
-    //     } 
-    // },
 ]
 
 const addRoleQ = [
@@ -116,19 +92,9 @@ const updateRoleQ = [
     }
 ]
 
-const deleteDptQ = [
-    {
-        type: 'list',
-        message: 'Which department would you like to remove?',
-        choices: deptArr,
-        name: 'deleteDpt'
-    }
-];
-
 const start = () => {
     inquirer.prompt(starterQuestion)
     .then(answers => {
-        // console.log(answers)
         switch (answers.action) {
             case 'View all employees':
                 showEmployees();
@@ -159,10 +125,6 @@ const start = () => {
                 updateRole();
                 break;
 
-            case 'Delete a department':
-                deleteDpt();
-                break;
-
             case 'Quit':
                 console.log('Thank you for using the employee database')
                 connection.end();
@@ -178,7 +140,6 @@ start();
 // function to show all employees and all info
 const showEmployees = () => {
     console.log('Showing all employees...\n');
-    // connection.query('SELECT * FROM employee', 
     connection.query(`
     SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name AS department_name, role.salary 
     FROM employee 
@@ -209,6 +170,7 @@ const showByDpt = () => {
     })
 };
 
+// function to show employees by role title
 const showByRole = () => {
     console.log('Showing all employees by role...\n');
     connection.query(`
@@ -227,8 +189,6 @@ const showByRole = () => {
 const addEmployee = () => {
     inquirer.prompt(addEmployeeQ)
     .then ((answer) => {
-        // answer.department_id = employeeRoleArr.indexOf(answer.title) +1;
-        // answer.role_id = deptArr.indexOf(answer.department) +1;
         answer.title = employeeRoleArr.indexOf(answer.title) +1;
         answer.manager = managerArr.indexOf(answer.manager) +1;
         connection.query(`
@@ -245,6 +205,7 @@ const addEmployee = () => {
     })
 };
 
+// function to show updated table with added employee
 const showAddedEmployee = () => {
     console.log('Employee Added!\n');
     connection.query(`
@@ -260,6 +221,7 @@ const showAddedEmployee = () => {
     })
 };
 
+// function to add a new role
 const addRole = () => {
     console.log('Adding role...\n');
     inquirer.prompt(addRoleQ)
@@ -267,8 +229,8 @@ const addRole = () => {
         connection.query(`
         INSERT INTO role SET title = ?, salary = ?, department_id = ?`, [answer.title, answer.salary, answer.deptId], 
         (err, res) => {
+            // add new role to employeeRoleArr to make an option for another action
             employeeRoleArr.push(answer.title);
-            console.log(employeeRoleArr);
             if (err) throw err;
             showRole();
             connection.end();
@@ -276,6 +238,7 @@ const addRole = () => {
     })
 }
 
+// function to show results with newly added role
 showRole = () => {
     connection.query(`
     SELECT * FROM role`, (err, res) => {
@@ -291,14 +254,13 @@ const addDept = () => {
     .then((answer) => {
         connection.query('INSERT INTO department SET name = ?', (answer.department),
         (err, res) => {
+            // add new department to deptArr to make an option for another action
             deptArr.push(answer.department);
-            console.log(deptArr);
             if (err) throw err;
             showDept();
             connection.end();
         });
     });
-    // start();
 };
 
 // function for showing added department 
@@ -320,15 +282,13 @@ const updateRole = () => {
         AND employee.last_name = ? 
         AND role.id = employee.id`, [answer.title, answer.firstName, answer.lastName], 
         (err, res) => {
+            // add new updated role to employeeRoleArr 
             employeeRoleArr.push(answer.title);
-            console.log(employeeRoleArr);
             if (err) throw err;
             showRoleUpdate();
-            // reprompt start questions
             connection.end()
         })
     });
-    // start();
 };
 
 // function for showing role update
@@ -343,30 +303,6 @@ const showRoleUpdate = () => {
     console.table(res);
     })
 };
-
-const deleteDpt = () => {
-    inquirer.prompt(deleteDptQ)
-    .then((answer) => {
-        connection.query(`
-        DELETE FROM department 
-        WHERE department.name = ?,
-        `, answer.deleteDpt, 
-        (err, res) => {
-            if (err) throw err;
-            console.table(res);
-            showDeleteDpt();
-            connection.end();
-        })
-    })
-}
-
-const showDeleteDpt = () => {
-    connection.query(`
-    SELECT * FROM department;
-    `, (err) => {
-        if (err) throw err;
-    })
-}
 
 connection.connect((err) => {
     if (err) throw err;
