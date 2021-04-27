@@ -1,8 +1,5 @@
 const inquirer = require('inquirer');
 const mysql = require('mysql');
-// const { connect } = require('node:http2');
-// const { Console } = require('node:console');
-// const { connect } = require('node:http2');
 
 const connection = mysql.createConnection({
     host: 'localhost',
@@ -30,7 +27,7 @@ const addDeptQ = [
 ]
 
 const employeeRoleArr = ['Sales Lead', 'Salesperson', 'Lead Engineer', 'Software Engineer', 'Accountant', 'Lawyer', 'Legal Team Lead'];
-const deptArr = ['Sales', 'Engineering', 'Finanace', 'Legal'];
+const deptArr = ['Sales', 'Engineering', 'Finanace', 'Legal', 'Strategy', 'Hospitality', 'Media', 'Music', 'Social Media'];
 const managerArr = ['Kat Larsen', 'Brian Anderson', 'Jessica Parker', 'Jonathan Long', 'Patrick Harris', 'Meredith Grey'];
 
 const addEmployeeQ = [
@@ -351,7 +348,8 @@ const deleteDpt = () => {
     inquirer.prompt(deleteDptQ)
     .then((answer) => {
         connection.query(`
-        DELETE FROM department WHERE department.name = ?,
+        DELETE FROM department 
+        WHERE department.name = ?,
         `, answer.deleteDpt, 
         (err, res) => {
             if (err) throw err;
